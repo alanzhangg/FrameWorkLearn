@@ -291,6 +291,34 @@ class Vehicle {
 
 let someVehicle = Vehicle()
 
+struct Celsius{
+    var temperatureInCelsius: Double
+    init(fromFahrenhait fahrenheit: Double) {
+        temperatureInCelsius = (fahrenheit - 32.0) / 1.8
+    }
+    init(fromKelvin kelvin: Double) {
+        temperatureInCelsius = kelvin - 273.15
+    }
+}
+
+let boilingPointOfWater = Celsius(fromFahrenhait: 212.0)
+let freezingPointOfWater = Celsius(fromKelvin: 273.15)
+
+class Bank {
+    static var coinsInBank = 10_000
+    static func distribute(coins numberOfCoinsRequested: Int) -> Int {
+        let numberOfCoinsToVend = min(numberOfCoinsRequested, coinsInBank)
+        coinsInBank -= numberOfCoinsToVend
+        return numberOfCoinsToVend
+    }
+    static func receive(coins: Int) {
+        coinsInBank += coins
+    }
+}
+
+
+
+
 
 
 
