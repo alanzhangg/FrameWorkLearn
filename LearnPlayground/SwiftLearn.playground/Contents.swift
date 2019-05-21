@@ -232,6 +232,15 @@ struct Rect {
     }
   }
 }
+
+extension Rect{
+    init(center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - (size.height / 2)
+        self.init(origin: Point(x: originX, y: originY), size: size)
+    }
+}
+
 var square = Rect(origin: Point(x: 0.0, y: 0.0),
                   size: Size(width: 10.0, height: 10.0))
 let initialSquareCenter = square.center
@@ -315,6 +324,146 @@ class Bank {
         coinsInBank += coins
     }
 }
+
+protocol FullNamed {
+    var fullName:String{get}
+}
+
+struct Person: FullNamed{
+    var fullName: String
+    
+}
+
+let john = Person(fullName: "John Appleseed")
+
+class Starship: FullNamed{
+    var prefix: String?
+    var name: String
+    init(name: String, prefix: String? = nil) {
+        self.name = name
+        self.prefix = prefix
+    }
+    var fullName: String{
+        return (prefix != nil ? prefix! + " " : "") + name
+    }
+}
+
+protocol RandomNumberGenerator {
+    func random() -> Double
+}
+
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -> Double {
+        lastRandom = ((lastRandom * a + c).truncatingRemainder(dividingBy:m))
+        return lastRandom / m
+    }
+}
+
+class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init(sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+    func roll() -> Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+
+var d6 = Dice(sides: 6, generator: LinearCongruentialGenerator())
+for _ in 1...5{
+     print("Random dice roll is \(d6.roll())")
+}
+
+protocol DiceGame {
+    var dice: Dice { get }
+    func play()
+}
+
+protocol DiceGameDelegate: AnyObject {
+    func gameDidStart(_ game: DiceGame)
+    func game(_ game: DiceGame, didStartNewTurnWithDiceRoll diceRoll: Int)
+    func gameDidEnd(_ game: DiceGame)
+}
+
+class SnakesAndLadders: DiceGame {
+    let finalSquare = 25
+    let dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+    var square = 0
+    var board: [Int]
+    init() {
+        board = Array(repeating: 0, count: finalSquare + 1)
+        board[03] = +08; board[06] = +11; board[09] = +09; board[10] = +02
+        board[14] = -10; board[19] = -11; board[22] = -02; board[24] = -08
+    }
+    weak var delegate: DiceGameDelegate?
+    func play() {
+        square = 0
+        delegate?.gameDidStart(self)
+        gameLoop: while square != finalSquare {
+            let diceRoll = dice.roll()
+            delegate?.game(self, didStartNewTurnWithDiceRoll: diceRoll)
+            switch square + diceRoll {
+            case finalSquare:
+                break gameLoop
+            case let newSquare where newSquare > finalSquare:
+                continue gameLoop
+            default:
+                square += diceRoll
+                square += board[square]
+            }
+        }
+        delegate?.gameDidEnd(self)
+    }
+}
+
+class DiceGameTracker: DiceGameDelegate {
+    var numberOfTurns = 0
+    func gameDidStart(_ game: DiceGame) {
+        numberOfTurns = 0
+        if game is SnakesAndLadders {
+            print("Started a new game of Snakes and Ladders")
+        }
+        print("The game is using a \(game.dice.sides)-sided dice")
+    }
+    func game(_ game: DiceGame, didStartNewTurnWithDiceRoll diceRoll: Int) {
+        numberOfTurns += 1
+        print("Rolled a \(diceRoll)")
+    }
+    func gameDidEnd(_ game: DiceGame) {
+        print("The game lasted for \(numberOfTurns) turns")
+    }
+}
+
+let tracker = DiceGameTracker()
+let game = SnakesAndLadders()
+game.delegate = tracker
+game.play()
+
+protocol TextRepresentable {
+    var textualDescription: String { get }
+}
+
+extension Dice: TextRepresentable{
+    var textualDescription: String{
+        return "A \(sides)-sided dice"
+    }
+}
+
+extension Array: TextRepresentable where Element: TextRepresentable{
+    var textualDescription: String {
+        let itemsAsText = self.map { $0.textualDescription }
+        return "[" + itemsAsText.joined(separator: ", ") + "]"
+    }
+}
+
+let myDice = [d6]
+print(myDice.textualDescription)
 
 
 
